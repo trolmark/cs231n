@@ -80,7 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        h1 = X.dot(W1) + b1
+        re_lu = lambda x: np.maximum(0,x)
+        scores = ((re_lu(h1)).dot(W2) + b2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +100,13 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        num_train = X.shape[0]
+        scores -= np.matrix(np.max(scores, axis=1)).T
+        scores_y = -scores[np.arange(num_train), y]
+        scores_j = np.sum(np.exp(scores), axis = 1)
+        loss = scores_y + np.log(scores_j)
+        loss = np.mean(loss)
+        loss += reg * np.sum(W1 * W1) + reg * np.sum(W2 * W2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
