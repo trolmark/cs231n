@@ -34,23 +34,22 @@ def softmax_loss_naive(W, X, y, reg):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
     def soft_max(x, exps):
-        f = exps
-        f -= np.max(f) 
-        p = np.exp(f[x]) / np.sum(np.exp(f))
+        exps -= np.max(exps)
+        p = np.exp(exps[x]) / np.sum(np.exp(exps))
         return p
     
     num_classes = W.shape[1]
     num_train = X.shape[0]
+   
     for i in range(num_train):
         scores = X[i].dot(W)
-        p = soft_max(y[i], scores)
-        loss += -np.log(p)
         for j in range(num_classes):
-            p_i = soft_max(j, scores)
+            p = soft_max(j, scores)
             if j == y[i]:
-                dW[:, j] += (-1 + p_i) * X[i]
+                loss += -np.log(p)
+                dW[:, j] += (p - 1) * X[i]
             else:
-                dW[:, j] += p_i * X[i]
+                dW[:, j] += p * X[i]
           
     # Add regularization to the loss.
     loss /= num_train
@@ -63,7 +62,6 @@ def softmax_loss_naive(W, X, y, reg):
 
     return loss, dW
 
-
 def softmax_loss_vectorized(W, X, y, reg):
     """
     Softmax loss function, vectorized version.
@@ -73,6 +71,9 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Initialize the loss and gradient to zero.
     loss = 0.0
     dW = np.zeros_like(W)
+    
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
 
     #############################################################################
     # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
@@ -81,9 +82,22 @@ def softmax_loss_vectorized(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    
+    scores = X.dot(W)
+    scores -= np.matrix(np.max(scores, axis=1)).T
+    scores_y = -scores[np.arange(num_train), y]
+    scores_j = np.sum(np.exp(scores), axis = 1)
+    loss = scores_y + np.log(scores_j)
+    loss = np.mean(loss)
+    loss += reg * np.sum(W * W)
+    
+    derivative = np.exp(scores) / np.matrix(scores_j).T
+    derivative[np.arange(num_train), y] -= 1
+    dW = X.T.dot(derivative)
+    
+    dW /= num_train
+    dW += reg * W
+   
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
