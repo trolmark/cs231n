@@ -134,11 +134,11 @@ class TwoLayerNet(object):
         
         dW1 = X.T.dot(dhidden)
         dW1 += 2*reg * W1
-               
+       
         grads['W2'] = dW2
-        grads['b2'] = np.sum(derivative, axis=0) # TODO : array of array
+        grads['b2'] = np.asarray(np.sum(derivative, axis=0)).reshape(-1)
         grads['W1'] = dW1  
-        grads['b1'] = np.sum(dhidden, axis=0)
+        grads['b1'] = np.asarray(np.sum(dhidden, axis=0)).reshape(-1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
