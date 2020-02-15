@@ -250,7 +250,7 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        y_pred = np.argmax(X.dot(self.params['W1']), axis = 1)
+        y_pred = np.argmax(self.loss(X), axis = 1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
