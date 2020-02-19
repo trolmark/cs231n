@@ -26,8 +26,10 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    num_inputs = x.shape[0]
+    D,M = w.shape
+    x_vector = x.reshape(num_inputs, D)
+    out = np.dot(x_vector, w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -60,7 +62,11 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, M = dout.shape
+    print(x.shape)
+    
+    D, _ = w.shape
+    dx = w.reshape(N, x.shape[1:])
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -86,7 +92,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(x, 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
