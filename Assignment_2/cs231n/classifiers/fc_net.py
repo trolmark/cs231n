@@ -49,7 +49,14 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        D = input_dim
+        H = hidden_dim
+        K = num_classes 
+        std = weight_scale
+        self.params['W1'] = std * np.random.randn(D,H)
+        self.params['b1'] = np.zeros((1,H))
+        self.params['W2'] = std * np.random.randn(H, K)
+        self.params['b2'] = np.zeros((1,H))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -83,7 +90,14 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        N, D = X.shape
+        
+        first_layer = np.dot(X, W1) + b1
+        re_lu = lambda x: np.maximum(0,x)
+        hidden_layer = re_lu(first_layer)
+        scores = hidden_layer.dot(W2) + b2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -107,7 +121,35 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores -= np.matrix(np.max(scores, axis=1)).T
+        scores_y = -scores[np.arange(N), y]
+        scores_j = np.sum(np.exp(scores), axis = 1)
+        
+        loss = scores_y + np.log(scores_j)
+        loss = np.mean(loss)
+        reg_loss = 0.5*self.reg*np.sum(W1*W1) + 0.5*self.reg*np.sum(W2*W2)
+        loss += reg_loss
+        
+        # calculate grad
+        derivative = np.exp(scores) / np.matrix(scores_j).T
+        derivative[np.arange(N), y] -= 1
+        derivative /= N 
+        
+        dW2 = hidden_layer.T.dot(derivative)
+        dW2 += 0.5*self.reg * W2
+        
+        # backprop into hidden layer
+        dhidden = np.dot(derivative, W2.T)       
+        # backprop the ReLU non-linearity
+        dhidden[hidden_layer <= 0] = 0
+        
+        dW1 = X.T.dot(dhidden)
+        dW1 += 0.5*self.reg * W1
+       
+        grads['W2'] = dW2
+        grads['b2'] = np.asarray(np.sum(derivative, axis=0)).reshape(-1)
+        grads['W1'] = dW1  
+        grads['b1'] = np.asarray(np.sum(dhidden, axis=0)).reshape(-1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
