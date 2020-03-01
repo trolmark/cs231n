@@ -209,7 +209,18 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        D = input_dim
+        K = num_classes 
+        std = weight_scale
+        for layer_index in range(self.num_layers - 1):
+            H = hidden_dims[layer_index]
+            self.params['W{i}'.format(i=layer_index)] = std * np.random.randn(D,H)
+            self.params['b{i}'.format(i=layer_index)] = np.zeros([H])
+            D = H
+          
+        # Set params for last layer
+        self.params['W{i}'.format(i=self.num_layers - 1)] = std * np.random.randn(D, K)
+        self.params['b{i}'.format(i=self.num_layers - 1)] = np.zeros([K])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -271,8 +282,30 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+        
+        batch_size = X.shape[0]
+        layer_in = np.reshape(X, [batch_size, -1])
+        cache_history = {}
+        
+        for layer_index in range(self.num_layers - 1):
+            W = self.params['W{i}'.format(i=layer_index)]
+            b = self.params['b{i}'.format(i=layer_index)]
+            (layer_out, layer_cache) = affine_forward(layer_in, W, b)
+            if self.normalization=='batchnorm':
+                pass
+            (relu_out, relu_cache) = relu_forward(layer_out)
+            if self.use_dropout:
+                pass
+            cache_history['affine_cache{i}'.format(i=layer_index)] = layer_cache
+            cache_history['relu_cache{i}'.format(i=layer_index)] = relu_cache
+            layer_in = relu_out
+            
+        W = self.params['W{i}'.format(i=self.num_layers-1)]
+        b = self.params['b{i}'.format(i=self.num_layers-1)]
+           
+        (last_layer_out, last_layer_cache) = affine_forward(layer_in, W, b)
+        cache_history['affine_cache{i}'.format(i=self.num_layers-1)] = last_layer_cache
+        scores = last_layer_out
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -299,7 +332,26 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, derivative = softmax_loss(scores, y)
+        reg_loss = 0
+        for layer_index in reversed(range(self.num_layers)):
+            reg_loss += 0.5*self.reg*np.sum(self.params['W{i}'.format(i=layer_index)])
+        loss += reg_loss
+        
+        for layer_index in reversed(range(self.num_layers)):
+            relu_cache_key = 'relu_cache{i}'.format(i=layer_index)
+            if relu_cache_key in cache_history:
+                derivative = relu_backward(derivative, cache_history[relu_cache_key])
+                
+            cache = cache_history['affine_cache{i}'.format(i=layer_index)]
+            (dx, dw, db) = affine_backward(derivative, cache)
+            w_key = 'W{i}'.format(i=layer_index)
+            b_key = 'b{i}'.format(i=layer_index)
+            dw += 0.5*self.reg * self.params[w_key]
+            grads[w_key] = dw
+            grads[b_key] = db
+           
+            derivative = dx
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
