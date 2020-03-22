@@ -292,8 +292,8 @@ class FullyConnectedNet(object):
             b = self.params['b{i}'.format(i=layer_index)]
             (layer_out, layer_cache) = affine_forward(layer_in, W, b)
             if self.normalization=='batchnorm':
-                pass
-            (relu_out, relu_cache) = relu_forward(layer_out)
+                (bn_out, bn_cache) = batchnorm_forward(layer_out)
+            (relu_out, relu_cache) = relu_forward(bn_out, )
             if self.use_dropout:
                 pass
             cache_history['affine_cache{i}'.format(i=layer_index)] = layer_cache
