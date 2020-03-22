@@ -202,9 +202,15 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         
         x_mean = np.mean(x, axis = 0)
-        x_var = np.var(x, axis = 0)
-        x = (x - x_mean)/np.sqrt(x_var + eps)
-        out = gamma*x + beta
+        xmu = x - x_mean
+        sq = xmu ** 2
+        x_var = 1./N * np.sum(sq, axis = 0)
+        sqrtvar = np.sqrt(x_var + eps)
+        ivar = 1/sqrtvar
+        x_hat = xmu * ivar
+        gammax = gamma*x_hat
+        out = gammax + beta
+        cache = (x_hat, gammax, xmu, ivar, sqrtvar, x_var, eps)
         
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -258,6 +264,7 @@ def batchnorm_backward(dout, cache):
     - dbeta: Gradient with respect to shift parameter beta, of shape (D,)
     """
     dx, dgamma, dbeta = None, None, None
+    xhat,gamma,xmu,ivar,sqrtvar,var,eps = cache
     ###########################################################################
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
@@ -266,7 +273,28 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N,D = dout.shape
+
+    dbeta = np.sum(dout, axis=0)
+    dgammax = dout
+
+    dgamma = np.sum(dgammax*xhat, axis=0)
+    dxhat = dgammax * gamma
+    
+    divar = np.sum(dxhat*xmu, axis=0)
+    dxmu1 = dxhat * ivar
+
+
+    dsqrtvar = -1. /(sqrtvar**2) * divar
+    dvar = 0.5 * 1. /np.sqrt(var+eps) * dsqrtvar
+
+    dsq = 1./N * np.ones((N,D)) * dvar
+
+    dxmu2 = 2 * xmu * dsq
+    dx1 = (dxmu1 + dxmu2)
+    dmu = -1 * np.sum(dxmu1+dxmu2, axis=0)
+    dx2 = 1. /N * np.ones((N,D)) * dmu
+    dx = dx1 + dx2
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -301,7 +329,7 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
