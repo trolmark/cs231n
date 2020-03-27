@@ -216,6 +216,9 @@ class FullyConnectedNet(object):
             H = hidden_dims[layer_index]
             self.params['W{i}'.format(i=layer_index)] = std * np.random.randn(D,H)
             self.params['b{i}'.format(i=layer_index)] = np.zeros([H])
+            if self.normalization=='batchnorm':
+                self.params['gamma{i}'.format(i=layer_index)] = np.ones([H])
+                self.params['beta{i}'.format(i=layer_index)] = np.zeros([H])
             D = H
           
         # Set params for last layer
@@ -292,8 +295,12 @@ class FullyConnectedNet(object):
             b = self.params['b{i}'.format(i=layer_index)]
             (layer_out, layer_cache) = affine_forward(layer_in, W, b)
             if self.normalization=='batchnorm':
-                (bn_out, bn_cache) = batchnorm_forward(layer_out)
-            (relu_out, relu_cache) = relu_forward(bn_out, )
+                gamma = self.params['gamma{i}'.format(i=layer_index)]
+                beta = self.params['beta{i}'.format(i=layer_index)]
+                (bn_out, bn_cache) = batchnorm_forward(layer_out,gamma, beta, self.bn_params[layer_index])
+                cache_history['bn_cache{i}'.format(i=layer_index)] = bn_cache
+                layer_out = bn_out
+            (relu_out, relu_cache) = relu_forward(layer_out)
             if self.use_dropout:
                 pass
             cache_history['affine_cache{i}'.format(i=layer_index)] = layer_cache
@@ -339,10 +346,19 @@ class FullyConnectedNet(object):
         loss += reg_loss
         
         for layer_index in reversed(range(self.num_layers)):
+
             relu_cache_key = 'relu_cache{i}'.format(i=layer_index)
             if relu_cache_key in cache_history:
                 derivative = relu_backward(derivative, cache_history[relu_cache_key])
-                
+
+            batchnorm_cache_key = 'bn_cache{i}'.format(i=layer_index)
+            if self.normalization=='batchnorm' and batchnorm_cache_key in cache_history:
+                (derivative, dgamma, dbeta) = batchnorm_backward(derivative, cache_history[batchnorm_cache_key])
+                gamma_key = 'gamma{i}'.format(i=layer_index)
+                beta_key = 'beta{i}'.format(i=layer_index)
+                grads[gamma_key] = dgamma
+                grads[beta_key] = dbeta
+
             cache = cache_history['affine_cache{i}'.format(i=layer_index)]
             (dx, dw, db) = affine_backward(derivative, cache)
             w_key = 'W{i}'.format(i=layer_index)
