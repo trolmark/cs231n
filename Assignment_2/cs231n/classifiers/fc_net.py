@@ -302,7 +302,9 @@ class FullyConnectedNet(object):
                 layer_out = bn_out
             (relu_out, relu_cache) = relu_forward(layer_out)
             if self.use_dropout:
-                pass
+                dropout_out, dropout_cache = dropout_forward(relu_out, self.dropout_param)
+                cache_history['dropout_cache{i}'.format(i=layer_index)] = dropout_cache
+                relu_out = dropout_out
             cache_history['affine_cache{i}'.format(i=layer_index)] = layer_cache
             cache_history['relu_cache{i}'.format(i=layer_index)] = relu_cache
             layer_in = relu_out
@@ -346,6 +348,11 @@ class FullyConnectedNet(object):
         loss += reg_loss
         
         for layer_index in reversed(range(self.num_layers)):
+
+            if self.use_dropout:
+                dropout_cache_key = 'dropout_cache{i}'.format(i=layer_index)
+                if dropout_cache_key in cache_history:
+                    derivative = dropout_backward(derivative,cache_history[dropout_cache_key])
 
             relu_cache_key = 'relu_cache{i}'.format(i=layer_index)
             if relu_cache_key in cache_history:
