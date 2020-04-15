@@ -577,7 +577,33 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    pad, stride = (conv_param['pad'], conv_param['stride'])
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+
+    H_line = 1 + int((H + 2 * pad - HH) / stride)
+    W_line = 1 + int((W + 2 * pad - WW) / stride)
+
+    out = np.zeros((N, F, H_line, W_line))
+    X_pad = np.pad(x, ((0,0),(0,0),(pad,pad), (pad,pad)), 'constant', constant_values = (0,0))
+
+    for i in range(N):
+      x_i_padded = X_pad[i,:,:,:]
+      for h_i in range(H_line):
+        for w_i in range(W_line):
+          # loop over filters
+          for c in range(F):
+            vert_start = h_i * stride
+            vert_finish = h_i * stride + HH
+            horiz_start = w_i * stride
+            horiz_finish = w_i * stride + WW
+            x_slice = x_i_padded[:, vert_start:vert_finish, horiz_start:horiz_finish]
+            s = np.multiply(x_slice, w[c,:,:,:])
+            # Sum over all entries of the volume s.
+            Z = np.sum(s)
+            # Add bias b to Z. Cast b to a float() so that Z results in a scalar value.
+            Z = Z + b[c].astype(float)
+            out[i,c,h_i,w_i] = Z
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
