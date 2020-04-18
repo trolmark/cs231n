@@ -694,7 +694,26 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    pool_height, pool_width, stride = (pool_param['pool_height'], pool_param['pool_width'], pool_param['stride'])
+    N, C, H, W = x.shape
+  
+    H_line = 1 + int((H - pool_height) / stride)
+    W_line = 1 + int((W - pool_width) / stride)
+
+    out = np.zeros((N, C, H_line, W_line))
+
+    for i in range(N):
+      x_i_padded = x[i,:,:,:]
+      for h_i in range(H_line):
+        for w_i in range(W_line):
+          # loop over filters
+          for c in range(C):
+            vert_start = h_i * stride
+            vert_finish = h_i * stride + pool_height
+            horiz_start = w_i * stride
+            horiz_finish = w_i * stride + pool_width
+            x_slice = x_i_padded[c, vert_start:vert_finish, horiz_start:horiz_finish]
+            out[i,c,h_i,w_i] = np.max(x_slice)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -721,7 +740,26 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    (x, pool_param) = cache
+    N, C, H, W = x.shape
+    pool_height, pool_width, stride = (pool_param['pool_height'], pool_param['pool_width'], pool_param['stride'])
+    _, _, H_line, W_line = dout.shape
+
+    dx = np.zeros(x.shape)
+
+    for i in range(N):
+      x_i = x[i,:,:,:]
+      for h_i in range(H_line):
+        for w_i in range(W_line):
+          for c in range(C):
+            vert_start = h_i * stride
+            vert_finish = h_i * stride + pool_height
+            horiz_start = w_i * stride
+            horiz_finish = w_i * stride + pool_width
+            x_slice = x_i[c, vert_start:vert_finish, horiz_start:horiz_finish]
+            mask = (x_slice == np.max(x_slice))
+            dx[i,c, vert_start:vert_finish, horiz_start:horiz_finish] += np.multiply(mask, dout[i,c, h_i, w_i])
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
