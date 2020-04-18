@@ -632,7 +632,35 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    (x, w, b, conv_param) = cache
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+    pad, stride = (conv_param['pad'], conv_param['stride'])
+    _, _, H_line, W_line = dout.shape
+  
+    dx = np.zeros(x.shape)                           
+    dw = np.zeros(w.shape)
+    db = np.zeros(b.shape)
+
+    x_pad = np.pad(x, ((0,0),(0,0),(pad,pad), (pad,pad)), 'constant', constant_values = (0,0))
+    dx_pad = np.pad(dx, ((0,0),(0,0),(pad,pad), (pad,pad)), 'constant', constant_values = (0,0))
+
+    for i in range(N):
+      x_i_padded = x_pad[i,:,:,:]
+      dx_i_padded = dx_pad[i,:,:,:]
+      for h_i in range(int(H_line)):
+        for w_i in range(int(W_line)):
+          # loop over filters
+          for c in range(F):
+            vert_start = h_i * stride
+            vert_finish = h_i * stride + HH
+            horiz_start = w_i * stride
+            horiz_finish = w_i * stride + WW
+            x_slice = x_i_padded[:, vert_start:vert_finish, horiz_start:horiz_finish]
+            dx_i_padded[:, vert_start:vert_finish, horiz_start:horiz_finish] += w[c,:,:,:] * dout[i, c, h_i, w_i]
+            dw[c,:,:,:] += x_slice * dout[i, c, h_i, w_i]
+            db[c] += dout[i, c, h_i, w_i]
+      dx[i, :, :, :] = dx_i_padded[:,pad:-pad, pad:-pad]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
