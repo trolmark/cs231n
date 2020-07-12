@@ -141,8 +141,23 @@ class CaptioningRNN(object):
         # in your implementation, if needed.                                       #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+         
+        if self.cell_type is 'rnn':
+            # Forward part
+            h0 = features.dot(W_proj) + b_proj
+            x, w_embed_cache = word_embedding_forward(captions_in, W_embed)
+            rnn_out, rnn_cache = rnn_forward(x, h0, Wx, Wh, b)
+            out, cache = temporal_affine_forward(rnn_out, W_vocab, b_vocab)
+            loss, dx = temporal_softmax_loss(out, captions_out, mask, verbose=False)
+            
+            # Backward part
+            dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dx, cache)
+            dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dx, rnn_cache)
+            grads['W_embed'] = word_embedding_backward(dx, w_embed_cache)
+            grads['W_proj'] = np.dot(features.T, dh0)
+            grads['b_proj'] = np.sum(dh0, axis=0)
+        elif self.cell_type is 'lstm':
+            pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
