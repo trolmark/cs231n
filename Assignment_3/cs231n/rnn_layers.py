@@ -305,7 +305,16 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, H = prev_h.shape
+    next_h = np.zeros(prev_h.shape)
+    next_c = np.zeros(prev_c.shape)
+    print(H)
+    
+    A = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
+    a_i = A[:,H]
+    a_f = A[:,H:H] 
+    a_o = A[:,2*H:H]
+    a_g = A[:,3*H:H]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
