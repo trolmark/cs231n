@@ -308,13 +308,21 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     N, H = prev_h.shape
     next_h = np.zeros(prev_h.shape)
     next_c = np.zeros(prev_c.shape)
-    print(H)
     
     A = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
-    a_i = A[:,H]
-    a_f = A[:,H:H] 
-    a_o = A[:,2*H:H]
-    a_g = A[:,3*H:H]
+    a_i = A[:,:H]
+    a_f = A[:,H:2*H] 
+    a_o = A[:,2*H:3*H]
+    a_g = A[:,3*H:4*H]
+    
+    i = sigmoid(a_i)
+    f = sigmoid(a_f)
+    o = sigmoid(a_o)
+    g = np.tanh(a_g)
+        
+    next_c = np.multiply(prev_c, f) + np.multiply(i, g)
+    next_h = np.multiply(o, np.tanh(next_c))
+    cache = (x, prev_h, prev_c, Wx, Wh, b, A)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
