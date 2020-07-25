@@ -313,7 +313,7 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     a_i = A[:,:H]
     a_f = A[:,H:2*H] 
     a_o = A[:,2*H:3*H]
-    a_g = A[:,3*H:4*H]
+    a_g = A[:,3*H:]
     
     i = sigmoid(a_i)
     f = sigmoid(a_f)
@@ -322,7 +322,7 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
         
     next_c = np.multiply(prev_c, f) + np.multiply(i, g)
     next_h = np.multiply(o, np.tanh(next_c))
-    cache = (x, prev_h, prev_c, Wx, Wh, b, A)
+    cache = (x, prev_h, prev_c, Wx, Wh, b, A, i, f, o, g, next_c, next_h)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -350,6 +350,7 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     - db: Gradient of biases, of shape (4H,)
     """
     dx, dprev_h, dprev_c, dWx, dWh, db = None, None, None, None, None, None
+    x, prev_h, prev_c, Wx, Wh, b, A, i, f, o, g, next_c, next_h = cache 
     #############################################################################
     # TODO: Implement the backward pass for a single timestep of an LSTM.       #
     #                                                                           #
@@ -358,7 +359,27 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dO = dnext_h * np.tanh(next_c)
+    dC = np.multiply(np.multiply(dnext_h, o), (1 - np.tanh(next_c) * np.tanh(next_c)))
+    dC = (dnext_c + dC)
+    
+    dprev_c = np.multiply(dC, f)
+    
+    dI = np.multiply(dC, g)
+    dG = np.multiply(dC, i)
+    dF = np.multiply(dC, prev_c)
+    
+    dа_G = dG * (1 - g * g)
+    dа_I = dI * i * (1 - i)
+    dа_F = dF * f * (1 - f)
+    da_O = dO * o * (1 - o)
+    dA = np.concatenate((dа_I, dа_F, da_O, dа_G), axis=1)
+    
+    dx = np.dot(dA, Wx.T)
+    dWx = np.dot(x.T, dA)
+    dWh = np.dot(prev_h.T, dA)
+    db = np.sum(dA, axis=0)
+    dprev_h = np.dot(dA, Wh.T)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
